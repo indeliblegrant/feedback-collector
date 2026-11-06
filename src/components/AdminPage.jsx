@@ -4,6 +4,8 @@ import SummaryCards from './SummaryCards';
 import ReviewFilters from './ReviewFilters';
 import ReviewTable from './ReviewTable';
 import EmptyState from './EmptyState';
+import ExportButton from './ExportButton';
+import './AdminPage.css';
 
 function AdminPage() {
   const [reviews, setReviews] = useLocalStorage('reviews', []);
@@ -32,7 +34,10 @@ function AdminPage() {
 
   return (
     <div>
-      <h1>Admin</h1>
+      <div className="admin-header">
+        <h1>Admin</h1>
+        <ExportButton reviews={visibleReviews} />
+      </div>
 
       <SummaryCards total={total} average={average} />
 
