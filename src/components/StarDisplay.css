@@ -1,0 +1,12 @@
+.star-display {
+  white-space: nowrap;
+  font-size: 1.1rem;
+}
+
+.display-star {
+  color: #d1d5db;
+}
+
+.display-star.filled {
+  color: #f59e0b;
+}
