@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import StarRating from './StarRating';
-import useLocalStorage from '../hooks/useLocalStorage';
+import { createReview } from '../utils/api';
 import './FeedbackForm.css';
 
 const MAX_COMMENT_LENGTH = 500;
-
-function createId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-}
+const MAX_NAME_LENGTH = 100;
 
 function validate(rating, comment) {
   const errors = {};
@@ -26,16 +23,17 @@ function validate(rating, comment) {
 }
 
 function FeedbackForm() {
-  const [, setReviews] = useLocalStorage('reviews', []);
-
   const [name, setName] = useState('');
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleNameChange = (event) => {
     setName(event.target.value);
+    setErrors((prev) => ({ ...prev, name: undefined }));
     setSubmitted(false);
   };
 
@@ -51,8 +49,9 @@ function FeedbackForm() {
     setSubmitted(false);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setSubmitError('');
 
     const validationErrors = validate(rating, comment);
     setErrors(validationErrors);
@@ -62,20 +61,27 @@ function FeedbackForm() {
       return;
     }
 
-    const newReview = {
-      id: createId(),
-      name: name.trim(),
-      rating,
-      comment: comment.trim(),
-      createdAt: new Date().toISOString(),
-    };
+    setSubmitting(true);
 
-    setReviews((prev) => [...prev, newReview]);
+    try {
+      await createReview({
+        name: name.trim(),
+        rating,
+        comment: comment.trim(),
+      });
 
-    setName('');
-    setRating(0);
-    setComment('');
-    setSubmitted(true);
+      setName('');
+      setRating(0);
+      setComment('');
+      setSubmitted(true);
+    } catch (error) {
+      // Keep what the user typed so they can try again.
+      setErrors(error.errors || {});
+      setSubmitError(error.message);
+      setSubmitted(false);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -92,9 +98,15 @@ function FeedbackForm() {
           id="name"
           type="text"
           value={name}
+          maxLength={MAX_NAME_LENGTH}
           onChange={handleNameChange}
           placeholder="Your name"
         />
+        {errors.name && (
+          <p className="error" role="alert">
+            {errors.name}
+          </p>
+        )}
       </div>
 
       <div className="form-field">
@@ -131,8 +143,14 @@ function FeedbackForm() {
         )}
       </div>
 
-      <button type="submit" className="submit-button">
-        Submit feedback
+      {submitError && (
+        <p className="error" role="alert">
+          {submitError}
+        </p>
+      )}
+
+      <button type="submit" className="submit-button" disabled={submitting}>
+        {submitting ? 'Submitting...' : 'Submit feedback'}
       </button>
     </form>
   );

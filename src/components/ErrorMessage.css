@@ -1,0 +1,23 @@
+.error-message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}
+
+.error-message p {
+  margin: 0;
+}
+
+.retry-button {
+  margin-top: 8px;
+  padding: 4px 12px;
+  border: 1px solid #dc2626;
+  border-radius: 4px;
+  background: white;
+  color: #dc2626;
+  font: inherit;
+  cursor: pointer;
+}

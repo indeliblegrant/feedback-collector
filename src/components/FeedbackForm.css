@@ -70,3 +70,8 @@
 .submit-button:hover {
   background: #2563eb;
 }
+
+.submit-button:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+}

@@ -4,3 +4,7 @@
   align-items: center;
   gap: 16px;
 }
+
+.status-text {
+  color: #6b7280;
+}

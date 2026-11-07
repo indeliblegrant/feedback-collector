@@ -1,16 +1,18 @@
 import { useState } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import useReviews from '../hooks/useReviews';
 import SummaryCards from './SummaryCards';
 import ReviewFilters from './ReviewFilters';
 import ReviewTable from './ReviewTable';
 import EmptyState from './EmptyState';
 import ExportButton from './ExportButton';
+import ErrorMessage from './ErrorMessage';
 import './AdminPage.css';
 
 function AdminPage() {
-  const [reviews, setReviews] = useLocalStorage('reviews', []);
+  const { reviews, loading, error, reload, removeReview } = useReviews();
   const [ratingFilter, setRatingFilter] = useState('all');
   const [searchText, setSearchText] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const total = reviews.length;
   const average =
@@ -28,9 +30,55 @@ function AdminPage() {
     .filter((review) => review.comment.toLowerCase().includes(search))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  const handleDelete = (id) => {
-    setReviews((prev) => prev.filter((review) => review.id !== id));
+  const handleDelete = async (id) => {
+    setDeleteError('');
+    try {
+      await removeReview(id);
+    } catch (err) {
+      setDeleteError(err.message);
+    }
   };
+
+  let content;
+
+  if (loading) {
+    content = <p className="status-text">Loading reviews...</p>;
+  } else if (error) {
+    content = <ErrorMessage message={error} onRetry={reload} />;
+  } else {
+    content = (
+      <>
+        <SummaryCards total={total} average={average} />
+
+        {deleteError && <ErrorMessage message={deleteError} />}
+
+        {total === 0 ? (
+          <EmptyState
+            title="No reviews yet"
+            message="Reviews will show up here once someone submits feedback."
+          />
+        ) : (
+          <>
+            <ReviewFilters
+              ratingFilter={ratingFilter}
+              onRatingChange={setRatingFilter}
+              searchText={searchText}
+              onSearchChange={setSearchText}
+            />
+
+            {visibleReviews.length === 0 ? (
+              <EmptyState
+                title="No matching reviews"
+                message="Try a different star rating or search word."
+              />
+            ) : (
+              <ReviewTable reviews={visibleReviews} onDelete={handleDelete} />
+            )}
+          </>
+        )}
+      </>
+    );
+  }
 
   return (
     <div>
@@ -39,32 +87,7 @@ function AdminPage() {
         <ExportButton reviews={visibleReviews} />
       </div>
 
-      <SummaryCards total={total} average={average} />
-
-      {total === 0 ? (
-        <EmptyState
-          title="No reviews yet"
-          message="Reviews will show up here once someone submits feedback."
-        />
-      ) : (
-        <>
-          <ReviewFilters
-            ratingFilter={ratingFilter}
-            onRatingChange={setRatingFilter}
-            searchText={searchText}
-            onSearchChange={setSearchText}
-          />
-
-          {visibleReviews.length === 0 ? (
-            <EmptyState
-              title="No matching reviews"
-              message="Try a different star rating or search word."
-            />
-          ) : (
-            <ReviewTable reviews={visibleReviews} onDelete={handleDelete} />
-          )}
-        </>
-      )}
+      {content}
     </div>
   );
 }
