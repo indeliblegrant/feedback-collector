@@ -2,11 +2,10 @@
 
 A small full-stack app for collecting and reviewing feedback. Visitors leave a star rating and a comment. An admin page lists every review with summary stats, filters, delete, and CSV export.
 
-- **Frontend:** React (JavaScript) built with Vite, plain CSS, no router (page switching uses state)
-- **Backend:** plain PHP 8 with PDO, no framework, no Composer
-- **Database:** SQLite (a single file)
+- **Frontend (this repository):** React (JavaScript) built with Vite, plain CSS, no router (page switching uses state)
+- **Backend (hosted separately, not in this repository):** plain PHP 8 with PDO and a SQLite database
 
-> **Portfolio project note:** the Admin page has **no authentication by design**. Anyone with the URL can view and delete reviews. Do not store real or sensitive data in a deployed demo.
+> **Portfolio project note:** the Admin page has **no authentication by design**. Anyone with the URL can view and delete reviews. Do not store real or sensitive data in the deployed demo.
 
 ## Features
 
@@ -15,7 +14,6 @@ A small full-stack app for collecting and reviewing feedback. Visitors leave a s
 - Required 5-star rating with hover preview, keyboard accessible (real buttons with aria-labels)
 - Required comment, max 500 characters, with a live counter
 - Inline validation errors, a "Submitting..." state, and a thank-you message
-- Server-side validation too, so the API never trusts the browser
 
 **Admin page**
 - Table of reviews (date, name, rating as stars, comment), newest first
@@ -33,60 +31,37 @@ A small full-stack app for collecting and reviewing feedback. Visitors leave a s
 feedback-collector/
 ├── index.html
 ├── package.json
-├── .env.example              # frontend env (VITE_API_BASE_URL)
-├── src/
-│   ├── main.jsx
-│   ├── App.jsx               # switches between Submit and Admin using state
-│   ├── index.css
-│   ├── components/           # one component per file, each with its own CSS
-│   │   ├── NavBar.jsx
-│   │   ├── SubmitPage.jsx
-│   │   ├── FeedbackForm.jsx
-│   │   ├── StarRating.jsx    # clickable stars
-│   │   ├── StarDisplay.jsx   # read-only stars
-│   │   ├── AdminPage.jsx
-│   │   ├── SummaryCards.jsx
-│   │   ├── ReviewFilters.jsx
-│   │   ├── ReviewTable.jsx
-│   │   ├── ReviewRow.jsx
-│   │   ├── ExportButton.jsx
-│   │   ├── EmptyState.jsx
-│   │   └── ErrorMessage.jsx
-│   ├── hooks/
-│   │   └── useReviews.js     # loads and deletes reviews through the API
-│   └── utils/
-│       ├── api.js            # the only place that calls fetch
-│       └── exportCsv.js      # CSV building, escaping and download
-└── backend/
-    ├── .env.example          # backend env
-    ├── .htaccess             # blocks private files when served from a subfolder
-    ├── bin/
-    │   └── init-db.php       # creates the database from the terminal
-    ├── data/                 # SQLite file lives here (git-ignored, created automatically)
-    ├── public/
-    │   ├── index.php         # single entry point and router
-    │   └── .htaccess         # sends all requests to index.php (Apache)
-    └── src/
-        ├── Env.php
-        ├── Database.php
-        ├── Cors.php
-        ├── Response.php
-        ├── ReviewRepository.php   # all the SQL
-        └── ReviewController.php   # validation and responses
+├── .env.example              # VITE_API_BASE_URL
+└── src/
+    ├── main.jsx
+    ├── App.jsx               # switches between Submit and Admin using state
+    ├── index.css
+    ├── components/           # one component per file, each with its own CSS
+    │   ├── NavBar.jsx
+    │   ├── SubmitPage.jsx
+    │   ├── FeedbackForm.jsx
+    │   ├── StarRating.jsx    # clickable stars
+    │   ├── StarDisplay.jsx   # read-only stars
+    │   ├── AdminPage.jsx
+    │   ├── SummaryCards.jsx
+    │   ├── ReviewFilters.jsx
+    │   ├── ReviewTable.jsx
+    │   ├── ReviewRow.jsx
+    │   ├── ExportButton.jsx
+    │   ├── EmptyState.jsx
+    │   └── ErrorMessage.jsx
+    ├── hooks/
+    │   └── useReviews.js     # loads and deletes reviews through the API
+    └── utils/
+        ├── api.js            # the only place that calls fetch
+        └── exportCsv.js      # CSV building, escaping and download
 ```
 
 ## Requirements
 
 - Node.js 18+ and npm
-- PHP 8.0+ with the `pdo_sqlite` and `mbstring` extensions
 - Git
-
-Check PHP:
-
-```bash
-php -v
-php -m    # should list pdo_sqlite and mbstring
-```
+- A running backend that follows the API contract below. The PHP backend is not part of this repository, so you need your own copy of it, or any server that implements the same three routes.
 
 ## Local setup
 
@@ -98,51 +73,23 @@ cd feedback-collector
 npm install
 ```
 
-### 2. Configure the environment files
+### 2. Configure the environment
 
 ```bash
 cp .env.example .env
-cp backend/.env.example backend/.env
 ```
 
-On Windows PowerShell use `Copy-Item` instead of `cp`.
+On Windows PowerShell use `Copy-Item .env.example .env`.
 
-Frontend `.env` (project root):
+Set the backend address in `.env` (no trailing slash):
 
 ```
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-Backend `backend/.env` for local development:
+Use your live API address instead if you want to develop against the deployed backend. In that case the backend's `ALLOWED_ORIGINS` must include `http://localhost:5173`.
 
-```
-APP_ENV=local
-APP_DEBUG=false
-DB_PATH=data/app.sqlite
-ALLOWED_ORIGINS=http://localhost:5173
-SESSION_SAMESITE=Lax
-SESSION_SECURE=false
-API_BASE_PATH=
-```
-
-### 3. Create the database
-
-```bash
-cd backend
-php bin/init-db.php
-```
-
-This creates `backend/data/app.sqlite` and the `reviews` table. It is safe to run more than once and never deletes data. The API also creates the database automatically on its first request.
-
-### 4. Run it (two terminals)
-
-Backend, from the `backend` folder:
-
-```bash
-php -S localhost:8000 -t public public/index.php
-```
-
-Frontend, from the project root:
+### 3. Run it
 
 ```bash
 npm run dev
@@ -150,33 +97,28 @@ npm run dev
 
 Open http://localhost:5173. Restart `npm run dev` after changing `.env`, because Vite reads it at startup.
 
-## Environment variables
+### Build
 
-### Frontend (`.env`)
+```bash
+npm run build
+npm run preview
+```
+
+## Environment variables
 
 | Variable | Description |
 | --- | --- |
 | `VITE_API_BASE_URL` | Base URL of the PHP API, no trailing slash. Baked in at build time, so rebuild or redeploy after changing it. |
 
-### Backend (`backend/.env`)
+`.env` is git-ignored. Only `.env.example` is committed.
 
-| Variable | Description |
-| --- | --- |
-| `APP_ENV` | `local` or `production`. |
-| `APP_DEBUG` | `true` shows real error messages in API responses. Keep `false` in production. |
-| `DB_PATH` | SQLite file location. Relative paths start from the backend folder. Keep it outside `public/`. |
-| `ALLOWED_ORIGINS` | Websites allowed to call the API, comma separated, no trailing slash. |
-| `SESSION_SAMESITE` | Reserved for a future login. Not used yet. |
-| `SESSION_SECURE` | Reserved for a future login. Not used yet. |
-| `API_BASE_PATH` | Only needed when the API is served from a subfolder. Empty for local `php -S`. |
+## API contract
 
-`.env` files are git-ignored. Only the `.env.example` files are committed.
-
-## API
+The frontend expects these routes under `VITE_API_BASE_URL`:
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/reviews` | List all reviews, newest first |
+| `GET` | `/reviews` | List all reviews |
 | `POST` | `/reviews` | Create a review. Body: `{ "name": "", "rating": 1-5, "comment": "..." }` |
 | `DELETE` | `/reviews/{id}` | Delete a review |
 
@@ -192,83 +134,47 @@ Review object:
 }
 ```
 
-Status codes: `200` list, `201` created, `204` deleted, `404` not found, `422` validation failed (with an `errors` object per field), `500` server error. All SQL uses prepared statements.
+Expected status codes: `200` list, `201` created, `204` deleted (no body), `404` not found, `422` validation failed. Error responses are JSON with a `message` and, for `422`, an `errors` object keyed by field (`name`, `rating`, `comment`). The frontend shows these messages inline.
 
-## Deployment
+The backend must also send CORS headers allowing the frontend's origin, and answer `OPTIONS` preflight requests (the app sends `POST` with JSON and `DELETE`).
 
-### Backend (PHP host)
-
-1. Upload the contents of `backend/` to the server, for example as `/var/www/html/feedback-collector/`.
-2. Create `backend/.env` on the server with production values:
-
-   ```
-   APP_ENV=production
-   APP_DEBUG=false
-   DB_PATH=data/app.sqlite
-   ALLOWED_ORIGINS=https://your-frontend.vercel.app
-   SESSION_SAMESITE=None
-   SESSION_SECURE=true
-   API_BASE_PATH=/feedback-collector/public
-   ```
-
-   `ALLOWED_ORIGINS` must match the frontend address exactly: `https`, no trailing slash, no path. List several origins separated by commas.
-3. Make the `data` folder writable by the web server user (see Troubleshooting) and create the database:
-
-   ```bash
-   sudo -u www-data php bin/init-db.php
-   ```
-4. Confirm `https://your-domain/feedback-collector/public/reviews` returns `[]`.
-5. Confirm private files are blocked. These must **not** be readable:
-   - `https://your-domain/feedback-collector/.env`
-   - `https://your-domain/feedback-collector/data/app.sqlite`
-
-If possible, point the site's document root directly at `backend/public`. Then `data/` and `.env` are never reachable by URL.
-
-#### If `/reviews` returns `{"message":"Not found."}`
-
-The router removes `API_BASE_PATH` from the start of the URL and expects `/reviews` to be left. The base path must match the URL you actually use:
-
-| URL you open | `API_BASE_PATH` |
-| --- | --- |
-| `.../feedback-collector/public/reviews` (rewrites working) | `/feedback-collector/public` |
-| `.../feedback-collector/public/index.php/reviews` (no rewrites) | `/feedback-collector/public/index.php` |
-
-Rewrites need `public/.htaccess`, Apache `mod_rewrite`, and `AllowOverride All`. On Nginx, `.htaccess` is ignored and the server block needs `try_files $uri /index.php?$query_string;`.
-
-### Frontend (Vercel)
+## Deployment (Vercel)
 
 1. Import the repository into Vercel (Vite is detected automatically).
-2. Under **Settings → Environment Variables**, add `VITE_API_BASE_URL` set to the live API base URL (no trailing slash), for example `https://your-domain/feedback-collector/public`.
+2. Under **Settings → Environment Variables**, add `VITE_API_BASE_URL` set to the live API base URL (no trailing slash).
 3. Redeploy. The variable is applied at build time, so saving it alone changes nothing.
-4. Add the Vercel URL to `ALLOWED_ORIGINS` on the backend. Preview deployments have random URLs and will be blocked by CORS unless added.
+4. Add the Vercel URL to the backend's allowed origins (`ALLOWED_ORIGINS`). It must match exactly: `https`, no trailing slash, no path. Preview deployments get random URLs and will be blocked unless added.
+
+## Backend notes (separate codebase)
+
+The PHP backend is kept outside this repository. Summary of how it is set up:
+
+- Plain PHP 8 with PDO, SQLite database in a `data/` folder outside the public web root
+- Single entry point (`public/index.php`) that routes the three API routes
+- Settings in `backend/.env`: `APP_ENV`, `APP_DEBUG`, `DB_PATH`, `ALLOWED_ORIGINS`, `API_BASE_PATH` (only for subfolder hosting) and reserved `SESSION_*` values
+- When hosted in a subfolder, `API_BASE_PATH` must match the URL used by the frontend, for example `/feedback-collector/public` for `.../feedback-collector/public/reviews`, or `/feedback-collector/public/index.php` if URL rewriting is not available
+- The `data/` folder must be writable by the web server user, and neither `data/` nor `.env` may be reachable by URL
+- Never run the server as root
 
 ## Troubleshooting
 
 | Problem | Cause and fix |
 | --- | --- |
-| `Cannot redeclare class ...` | A PHP file contains the wrong class. Each file in `backend/src` should declare the class matching its filename. Check with `grep -n "^final class" src/*.php`. |
-| `unable to open database file` | PHP cannot create or write the `data` folder. Give the web user ownership: `sudo chown -R www-data:www-data data && sudo chmod 775 data`. Use your own user if you run `php -S`. |
-| `attempt to write a readonly database` | The database file is owned by a different user (often root after using plain `sudo`). Fix ownership of `data/` and `data/app.sqlite`. Run the init script as the web user, not root. |
-| Writes still fail although permissions look right | The service may be sandboxed (systemd `ProtectSystem`), or SELinux may block writes. Add `ReadWritePaths=<data folder>` with `sudo systemctl edit apache2`, or run `sudo chcon -R -t httpd_sys_rw_content_t data`. |
-| "Could not reach the server" in the app | The backend is down, or `VITE_API_BASE_URL` is wrong or was not set before the build. |
-| CORS error in the browser console | `ALLOWED_ORIGINS` does not exactly match the frontend address. |
-| Requests go to `undefined/reviews` | `VITE_API_BASE_URL` was not set when the frontend was built. Set it and redeploy. |
-
-Set `APP_DEBUG=true` temporarily to see the real error message in API responses, and set it back to `false` afterwards.
+| "Could not reach the server" | The backend is down, or `VITE_API_BASE_URL` is wrong. |
+| Requests go to `undefined/reviews` | `VITE_API_BASE_URL` was not set when the app was built. Set it and redeploy. |
+| CORS error in the browser console | The backend's `ALLOWED_ORIGINS` does not exactly match the frontend address. |
+| `{"message":"Not found."}` from the API | The URL does not match the backend's `API_BASE_PATH`, or URL rewriting is not working. |
+| Changes to `.env` have no effect | Restart `npm run dev` (or redeploy on Vercel). |
 
 ## Security notes
 
-- **No authentication by design.** This is a demo. Anyone who can reach the API can list and delete reviews. Add a login before using this for real data.
-- **Never run the server as root**, even locally. It makes the database root-owned and gives every request full system access.
-- All SQL uses PDO prepared statements.
-- Input is validated on both the client and the server.
+- **No authentication by design.** This is a demo. Anyone who can reach the API can list and delete reviews. Add a login before using it for real data.
 - CSV export neutralises spreadsheet formulas and escapes quotes, commas and line breaks.
-- `.env` and `data/` must never be web-accessible.
-- Back up `data/app.sqlite`, since it holds the only copy of the reviews.
+- The backend validates all input again and uses prepared statements for every query.
 
 ## Possible next steps
 
-- Admin login using the reserved `SESSION_*` settings
+- Admin login
 - Pagination for large numbers of reviews
-- Unit tests for `exportCsv.js` and the validation rules
-- Rate limiting on `POST /reviews`
+- Unit tests for `exportCsv.js` and the form validation
+- Add the backend to a repository of its own, with a README for it
